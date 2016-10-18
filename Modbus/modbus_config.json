@@ -1,0 +1,7 @@
+{
+  "Baud rate":19200,
+  "timeout":"None",
+  "parity":"PARITY_NONE",
+  "Stop bits":"STOPBITS_ONE",
+  "Byte size":"EIGHTBITS"
+}
