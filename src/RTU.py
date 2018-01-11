@@ -3,6 +3,11 @@ import time
 from random import randint
 import serial
 import serial.tools.list_ports
+import logging
+from logging.config import fileConfig
+
+fileConfig('logging_config.ini')
+logger = logging.getLogger(__name__)
 
 # Adjust properly
 minimalmodbus.TIMEOUT = 0.07
@@ -33,10 +38,23 @@ FUNCTION_CODES = {
 }
 
 
+class ModbusFactory():
+    def factory(self, modbus_type):
+        if modbus_type.lower()=="mocked":
+            return MockedRtuSlave()
+        if modbus_type.lower()=="rtu":
+            return HitachiSlave()
+
+
+class MockedRtuSlave():
+    def __init__(self):
+        logger.debug("Mocked rtu created")
+
+
 class HitachiSlave(minimalmodbus.Instrument):
     """ Slave class inheriting from minimalmodbus instrument class. Designed for Hitachi power inverter.
     """
-    def __init__(self, device_address, com_port, debug_class=False, debug_modbus=False):
+    def __init__(self, device_address, com_port, debug_modbus=False):
         self.port = com_port
         self.set_up_port()
         self.device_address = device_address
@@ -45,14 +63,13 @@ class HitachiSlave(minimalmodbus.Instrument):
         minimalmodbus.Instrument.__init__(self, port=com_port, slaveaddress=device_address, mode='rtu')
         self.debug = debug_modbus
         self.handle_local_echo = False
-        print "[Modbus] Hitachi object initialized at port " + str(self.port) + "."
-        if self.debug_class:
-            print("[Debug] " + self.debug_date_format() + str(self))
+        logger.debug("Hitachi object initialized at port " + str(self.port) + ".")
+
 
     def __del__(self):
         self.serial.close()
         if self.debug_class:
-            print("[Debug] " + self.debug_date_format() + " Deleting Hitachi slave: " + str(self.device_address) + " at port " + str(self.port))
+            logger.debug("Deleting Hitachi slave: " + str(self.device_address) + " at port " + str(self.port))
 
     def set_up_port(self):
         ser = serial.Serial(
@@ -65,52 +82,48 @@ class HitachiSlave(minimalmodbus.Instrument):
             )
         ser.close()
 
-    @staticmethod
-    def debug_date_format():
-        return time.strftime("%Y/%m/%d %H:%M:%S ")
-
     # This function test modbus connection by sending random value
     def modbus_test(self, code="00"):
         test_data = str(randint(0, 9)) + str(randint(0, 9))
         if self.debug_class:
-            print("[Debug] " + self.debug_date_format() + " Testing modbus.")
+            logger.debug("Testing modbus.")
         # Frame format:  address, function_code=08, code=00, test_data=xx, crc
         try:
             test_response = self._performCommand(8, code + test_data)
         except IOError as e:
-            print "[Modbus] Error: " + str(e)
+            logger.debug("Error: " + str(e))
             exit(1)
         else:
             if str(test_response) == code + test_data:
-                print("[Modbus] " + "Test of connection passed." + " Request: " + code + test_data + " response: " + str(test_response))
+                logger.debug("Test of connection passed." + " Request: " + code + test_data + " response: " + str(test_response))
                 return 1
             else:
-                print("[Modbus] " + "Test of connection failed. " + "Request: " + code + test_data + " response: " + str(test_response))
+                logger.debug("Test of connection failed. " + "Request: " + code + test_data + " response: " + str(test_response))
                 return 0
 
     def get_status(self):
         if self.debug_class:
-            print("[Debug] " + self.debug_date_format() + " Checking device status.")
+            logger.debug("Checking device status.")
         return self.read_bit(READ_WRITE_COILS["on_off"], functioncode=FUNCTION_CODES["read coil"])
 
     def turn_on_device(self):
         if self.debug_class:
-            print("[Debug] " + self.debug_date_format() + " Turning ON device.")
+            logger.debug("Turning ON device.")
         self.write_bit(READ_WRITE_COILS["on_off"], value=1, functioncode=FUNCTION_CODES["write coil"])
 
     def turn_off_device(self):
         if self.debug_class:
-            print("[Debug] " + self.debug_date_format() + " Turning OFF device.")
+            logger.debug("Turning OFF device.")
         self.set_frequency(HITACHI_FRQUENCY_MIN)
         self.write_bit(READ_WRITE_COILS["on_off"], value=0, functioncode=FUNCTION_CODES["write coil"])
 
     def set_frequency(self, frequency):
         assert HITACHI_FRQUENCY_MIN <= frequency <= HITACHI_FRQUENCY_MAX, "Wrong frequency value."
         if self.debug_class:
-            print("[Debug] " + self.debug_date_format() + " Set frequency to " + str(frequency))
+            logger.debug("Set frequency to " + str(frequency))
         self.write_register(READ_WRITE_REGISTERS["inverter_frequency"], frequency, functioncode=FUNCTION_CODES["write register"])
 
     def get_frequency(self):
         if self.debug_class:
-            print("[Debug] " + self.debug_date_format() + " Getting frequency from register: " + str(READ_WRITE_REGISTERS["inverter_frequency"]))
+            logger.debug("Getting frequency from register: " + str(READ_WRITE_REGISTERS["inverter_frequency"]))
         return self.read_register(READ_WRITE_REGISTERS["inverter_frequency"], functioncode=FUNCTION_CODES["read register"])
