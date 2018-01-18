@@ -1,10 +1,11 @@
 import minimalmodbus
 import time
-from random import randint
+import numpy as np
 import serial
 import serial.tools.list_ports
 import logging
 from logging.config import fileConfig
+
 
 fileConfig('logging_config.ini')
 logger = logging.getLogger(__name__)
@@ -47,8 +48,21 @@ class ModbusFactory():
 
 
 class MockedRtuSlave():
+    """
+    This class is used to mock communication over modbus rtu
+    """
     def __init__(self):
         logger.debug("Mocked rtu created")
+
+
+    def set_frequency(self, freq):
+        logger.debug("Frequency set to: {}".format(freq))
+
+
+    def get_frequency(self):
+        freq = 10.0 * np.random.randn() + 50.0
+        logger.debug("Current frequency is: {}".format(freq))
+        return freq
 
 
 class HitachiSlave(minimalmodbus.Instrument):
@@ -56,7 +70,7 @@ class HitachiSlave(minimalmodbus.Instrument):
     """
     def __init__(self, device_address, com_port, debug_modbus=False):
         self.port = com_port
-        self.set_up_port()
+        self._set_up_port()
         self.device_address = device_address
         assert isinstance(debug_class, bool), "Expected bool type as debug argument."
         self.debug_class = debug_class
@@ -71,7 +85,7 @@ class HitachiSlave(minimalmodbus.Instrument):
         if self.debug_class:
             logger.debug("Deleting Hitachi slave: " + str(self.device_address) + " at port " + str(self.port))
 
-    def set_up_port(self):
+    def _set_up_port(self):
         ser = serial.Serial(
             port=str(self.port),
             baudrate=19200,
@@ -101,15 +115,18 @@ class HitachiSlave(minimalmodbus.Instrument):
                 logger.debug("Test of connection failed. " + "Request: " + code + test_data + " response: " + str(test_response))
                 return 0
 
+
     def get_status(self):
         if self.debug_class:
             logger.debug("Checking device status.")
         return self.read_bit(READ_WRITE_COILS["on_off"], functioncode=FUNCTION_CODES["read coil"])
 
+
     def turn_on_device(self):
         if self.debug_class:
             logger.debug("Turning ON device.")
         self.write_bit(READ_WRITE_COILS["on_off"], value=1, functioncode=FUNCTION_CODES["write coil"])
+
 
     def turn_off_device(self):
         if self.debug_class:
@@ -117,11 +134,13 @@ class HitachiSlave(minimalmodbus.Instrument):
         self.set_frequency(HITACHI_FRQUENCY_MIN)
         self.write_bit(READ_WRITE_COILS["on_off"], value=0, functioncode=FUNCTION_CODES["write coil"])
 
+
     def set_frequency(self, frequency):
         assert HITACHI_FRQUENCY_MIN <= frequency <= HITACHI_FRQUENCY_MAX, "Wrong frequency value."
         if self.debug_class:
             logger.debug("Set frequency to " + str(frequency))
         self.write_register(READ_WRITE_REGISTERS["inverter_frequency"], frequency, functioncode=FUNCTION_CODES["write register"])
+
 
     def get_frequency(self):
         if self.debug_class:
