@@ -6,10 +6,8 @@ from time import sleep
 from threading import Thread
 from multiprocessing import Queue
 import logging
-from logging.config import fileConfig
 
 
-fileConfig('logging_config.ini')
 logger = logging.getLogger(__name__)
 
 
@@ -63,10 +61,10 @@ class RegulatorThread(Thread):
 
     def notify(self, freq):
         for observer in self.observers:
-            logger.debug("Notifing {} about new freq: {}".format(observer, freq))
+            logger.debug("Setting {} new freq to: {}".format(observer, freq))
             observer.set_frequency(freq)
 
     def run(self):
         while True:
-            self.notify(1)
+            self.notify(2.0 * np.random.randn() + 10.0  )
             sleep(0.5)

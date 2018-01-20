@@ -4,10 +4,7 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 import logging
-from logging.config import fileConfig
 
-
-fileConfig('logging_config.ini')
 logger = logging.getLogger(__name__)
 
 # Adjust properly

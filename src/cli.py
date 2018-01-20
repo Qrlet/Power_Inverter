@@ -1,7 +1,7 @@
 # This module serves as command line interface for power inverter project
 import click
 import RTU
-from sensor_api import *
+import sensor_api
 
 
 @click.command()
@@ -9,16 +9,20 @@ from sensor_api import *
 def main(mock):
 	factory = RTU.ModbusFactory()
 	if not mock:
-		rtu = factory.factory("mocked")
+		modbus = factory.factory("mocked")
+	else:
+		modbus = factory.factory("rtu")
 
-	sensor = MockedWidthSensor()
-	sensor_thread = SensorThread(sensor)
-	regulator_thread = RegulatorThread()
+	sensor = sensor_api.MockedWidthSensor()
+	sensor_thread = sensor_api.SensorThread(sensor)
+	regulator_thread = sensor_api.RegulatorThread()
 	sensor_thread.register(regulator_thread)
-	regulator_thread.register(rtu)
+	regulator_thread.register(modbus)
 
 	sensor_thread.start()
 	regulator_thread.start()
 
 if __name__ == "__main__":
+	from logging.config import fileConfig
+	fileConfig('logging_config.ini', disable_existing_loggers=False)
 	main()
