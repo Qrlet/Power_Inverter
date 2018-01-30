@@ -6,12 +6,13 @@ import sensor_api
 
 @click.command()
 @click.option("--mock", default=False, help="If true will use mocked objects", type=bool)
-def main(mock):
+@click.option("--mode", default="auto", help="Mode of operation: auto or manual")
+def main(mock, mode):
 	factory = RTU.ModbusFactory()
 	if not mock:
-		modbus = factory.factory("mocked")
+		modbus = factory.create_modbus("mocked")
 	else:
-		modbus = factory.factory("rtu")
+		modbus = factory.create_modbus("rtu")
 
 	sensor = sensor_api.MockedWidthSensor()
 	sensor_thread = sensor_api.SensorThread(sensor)

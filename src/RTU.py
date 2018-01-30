@@ -11,8 +11,6 @@ logger = logging.getLogger(__name__)
 minimalmodbus.TIMEOUT = 0.07
 
 # TODO: Update coils and registers
-# TODO: print set/get frames <- SOLVED. Look at modbus_test
-# TODO: Configuration of serial port
 # TODO: Handle wrong frequency
 
 # Maximum and minimum frequency of power inverter. 500 = 50 Hz
@@ -37,7 +35,7 @@ FUNCTION_CODES = {
 
 
 class ModbusFactory():
-    def factory(self, modbus_type):
+    def create_modbus(self, modbus_type):
         if modbus_type.lower()=="mocked":
             return MockedRtuSlave()
         if modbus_type.lower()=="rtu":
@@ -50,6 +48,10 @@ class MockedRtuSlave():
     """
     def __init__(self):
         logger.debug("Mocked rtu created")
+
+
+    def _set_up_port(self):
+        logger.debug("Port ready")
 
 
     def set_frequency(self, freq):
@@ -65,22 +67,18 @@ class MockedRtuSlave():
 class HitachiSlave(minimalmodbus.Instrument):
     """ Slave class inheriting from minimalmodbus instrument class. Designed for Hitachi power inverter.
     """
-    def __init__(self, device_address, com_port, debug_modbus=False):
+    def __init__(self, device_address, com_port):
         self.port = com_port
         self._set_up_port()
         self.device_address = device_address
-        assert isinstance(debug_class, bool), "Expected bool type as debug argument."
-        self.debug_class = debug_class
         minimalmodbus.Instrument.__init__(self, port=com_port, slaveaddress=device_address, mode='rtu')
-        self.debug = debug_modbus
         self.handle_local_echo = False
         logger.debug("Hitachi object initialized at port " + str(self.port) + ".")
 
 
     def __del__(self):
         self.serial.close()
-        if self.debug_class:
-            logger.debug("Deleting Hitachi slave: " + str(self.device_address) + " at port " + str(self.port))
+        logger.debug("Deleting Hitachi slave: " + str(self.device_address) + " at port " + str(self.port))
 
     def _set_up_port(self):
         ser = serial.Serial(
@@ -96,8 +94,7 @@ class HitachiSlave(minimalmodbus.Instrument):
     # This function test modbus connection by sending random value
     def modbus_test(self, code="00"):
         test_data = str(randint(0, 9)) + str(randint(0, 9))
-        if self.debug_class:
-            logger.debug("Testing modbus.")
+        logger.debug("Testing modbus.")
         # Frame format:  address, function_code=08, code=00, test_data=xx, crc
         try:
             test_response = self._performCommand(8, code + test_data)
@@ -114,32 +111,27 @@ class HitachiSlave(minimalmodbus.Instrument):
 
 
     def get_status(self):
-        if self.debug_class:
-            logger.debug("Checking device status.")
+        logger.debug("Checking device status.")
         return self.read_bit(READ_WRITE_COILS["on_off"], functioncode=FUNCTION_CODES["read coil"])
 
 
     def turn_on_device(self):
-        if self.debug_class:
-            logger.debug("Turning ON device.")
+        logger.debug("Turning ON device.")
         self.write_bit(READ_WRITE_COILS["on_off"], value=1, functioncode=FUNCTION_CODES["write coil"])
 
 
     def turn_off_device(self):
-        if self.debug_class:
-            logger.debug("Turning OFF device.")
+        logger.debug("Turning OFF device.")
         self.set_frequency(HITACHI_FRQUENCY_MIN)
         self.write_bit(READ_WRITE_COILS["on_off"], value=0, functioncode=FUNCTION_CODES["write coil"])
 
 
     def set_frequency(self, frequency):
         assert HITACHI_FRQUENCY_MIN <= frequency <= HITACHI_FRQUENCY_MAX, "Wrong frequency value."
-        if self.debug_class:
-            logger.debug("Set frequency to " + str(frequency))
+        logger.debug("Set frequency to " + str(frequency))
         self.write_register(READ_WRITE_REGISTERS["inverter_frequency"], frequency, functioncode=FUNCTION_CODES["write register"])
 
 
     def get_frequency(self):
-        if self.debug_class:
-            logger.debug("Getting frequency from register: " + str(READ_WRITE_REGISTERS["inverter_frequency"]))
+        logger.debug("Getting frequency from register: " + str(READ_WRITE_REGISTERS["inverter_frequency"]))
         return self.read_register(READ_WRITE_REGISTERS["inverter_frequency"], functioncode=FUNCTION_CODES["read register"])
