@@ -20,17 +20,22 @@ def main():
 
 class SensorWidget():
     def __init__(self, parent=None):
-        self.figure = plt.figure(figsize=(1,1))
-        self.axes = self.figure.add_subplot(111)
+        self.figure, self.axes = plt.subplots()
+        self.compute_initial_figure()
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setParent(parent)
+        
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_figure)
         self.timer.start(100)
 
+    def compute_initial_figure(self):
+        self.axes.plot([random.randint(1,100) for i in range(100)])
+
     def update_figure(self):
+    	self.axes.cla()
     	self.axes.plot([random.randint(1,100) for i in range(100)])
-    	self.axes.draw()
+    	self.canvas.draw()
 
 
 class Ui_MainWindow(object):
