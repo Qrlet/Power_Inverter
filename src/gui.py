@@ -7,6 +7,8 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import random
 
+N_POINTS_ON_PLOT = 100
+
 
 def main():
 	app = QtWidgets.QApplication(sys.argv)
@@ -21,6 +23,8 @@ def main():
 class SensorWidget():
     def __init__(self, parent=None):
         self.figure, self.axes = plt.subplots()
+        self.x_axis = [x for x in range(N_POINTS_ON_PLOT)]
+        self.y_values = [0]*N_POINTS_ON_PLOT
         self.compute_initial_figure()
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setParent(parent)
@@ -30,11 +34,15 @@ class SensorWidget():
         self.timer.start(100)
 
     def compute_initial_figure(self):
-        self.axes.plot([random.randint(1,100) for i in range(100)])
+        self.axes.plot(self.y_values)
 
     def update_figure(self):
     	self.axes.cla()
-    	self.axes.plot([random.randint(1,100) for i in range(100)])
+    	self.y_values.append(random.randint(1,100))
+    	if len(self.y_values) > N_POINTS_ON_PLOT:
+    		self.y_values.pop(0)
+    		self.x_axis = [x + 1 for x in self.x_axis]
+    	self.axes.plot(self.x_axis, self.y_values)
     	self.canvas.draw()
 
 
