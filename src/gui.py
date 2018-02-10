@@ -11,20 +11,20 @@ N_POINTS_ON_PLOT = 100
 
 
 def main():
-	app = QtWidgets.QApplication(sys.argv)
-	window = QtWidgets.QMainWindow()
-	ui = Ui_MainWindow()
-	ui.setupUi(window)
-	ui.setup_signals()
-	window.show()
-	sys.exit(app.exec_())
+    app = QtWidgets.QApplication(sys.argv)
+    window = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(window)
+    ui.setup_signals()
+    window.show()
+    sys.exit(app.exec_())
 
 
 class SensorWidget():
     def __init__(self, parent=None):
         self.figure, self.axes = plt.subplots()
-        self.x_axis = [x for x in range(N_POINTS_ON_PLOT)]
-        self.y_values = [0]*N_POINTS_ON_PLOT
+        self.x_axis = []
+        self.y_values = []
         self.compute_initial_figure()
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setParent(parent)
@@ -37,13 +37,16 @@ class SensorWidget():
         self.axes.plot(self.y_values)
 
     def update_figure(self):
-    	self.axes.cla()
-    	self.y_values.append(random.randint(1,100))
-    	if len(self.y_values) > N_POINTS_ON_PLOT:
-    		self.y_values.pop(0)
-    		self.x_axis = [x + 1 for x in self.x_axis]
-    	self.axes.plot(self.x_axis, self.y_values)
-    	self.canvas.draw()
+        self.axes.cla()
+        self.y_values.append(random.randint(1,100))
+        if len(self.y_values) > N_POINTS_ON_PLOT:
+            self.y_values.pop(0)
+            self.x_axis = [x + 1 for x in self.x_axis]
+        else:
+            self.axes.set_xlim(0, N_POINTS_ON_PLOT)
+            self.x_axis.append(len(self.x_axis))
+        self.axes.plot(self.x_axis, self.y_values)
+        self.canvas.draw()
 
 
 class Ui_MainWindow(object):
@@ -111,8 +114,8 @@ class Ui_MainWindow(object):
 
 
     def setup_signals(self):
-    	self.horizontalSlider.valueChanged.connect(self.lcdNumber_freq.display)
-    	self.pushButton.clicked.connect(lambda: self.lcdNumber_freq.display(float(self.lineEdit.text())))
+        self.horizontalSlider.valueChanged.connect(self.lcdNumber_freq.display)
+        self.pushButton.clicked.connect(lambda: self.lcdNumber_freq.display(float(self.lineEdit.text())))
 
 
 
