@@ -1,11 +1,17 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-import sys
 import matplotlib
+import sys
 matplotlib.use("Qt5Agg")
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import random
+from multiprocessing import Queue
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 N_POINTS_ON_PLOT = 100
 
@@ -19,33 +25,41 @@ def main():
     window.show()
     sys.exit(app.exec_())
 
-
 class SensorWidget():
     def __init__(self, parent=None):
         self.figure, self.axes = plt.subplots()
         self.x_axis = []
         self.y_values = []
+        self.sensor_plot_queue = Queue(maxsize=N_POINTS_ON_PLOT)
+
         self.compute_initial_figure()
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setParent(parent)
-        
+
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_figure)
-        self.timer.start(100)
+        self.timer.start(5)
 
     def compute_initial_figure(self):
         self.axes.plot(self.y_values)
 
+    def feed_value(self, value):
+        self.sensor_plot_queue.put(value)
+
     def update_figure(self):
         self.axes.cla()
-        self.y_values.append(random.randint(1,100))
+        # ToDo: Need to add lock here and iterate through all elements
+        if not self.sensor_plot_queue.empty():
+            self.y_values.append(self.sensor_plot_queue.get())
         if len(self.y_values) > N_POINTS_ON_PLOT:
             self.y_values.pop(0)
             self.x_axis = [x + 1 for x in self.x_axis]
         else:
             self.axes.set_xlim(0, N_POINTS_ON_PLOT)
-            self.x_axis.append(len(self.x_axis))
+            while len(self.x_axis) < len(self.y_values):
+                self.x_axis.append(len(self.y_values))
         self.axes.plot(self.x_axis, self.y_values)
+        logging.debug("Drawing new plot")
         self.canvas.draw()
 
 

@@ -22,10 +22,16 @@ class SensorThread(Thread):
         self.observers = []
 
     def register(self, observer):
-        logger.debug("SensorThread regsitered {}".format(observer))
+        assert hasattr(observer, "feed_value"), "Given object: {} does not have 'feed_value' attribute".format(observer)
         self.observers.append(observer)
+        logger.debug("SensorThread regsitered: {}".format(observer))
 
     def notify(self, reading):
+        """
+        Notifies registered object by executing 'feed_value'
+
+        :param reading, float, sensor value
+        """
         for observer in self.observers:
             logger.debug("Notifing {} about new width: {}".format(observer, reading))
             observer.feed_value(reading)
@@ -38,12 +44,12 @@ class SensorThread(Thread):
                 pass
             else:
                 self.notify(reading)
-            sleep(0.5)
+            sleep(0.05)
 
 
 class MockedWidthSensor(object):
     def get_width(self):
-        return 10.0 * np.random.randn() + 2.0
+        return np.random.randn() + 50.0
 
 
 class RegulatorThread(Thread):
@@ -53,18 +59,18 @@ class RegulatorThread(Thread):
         self.raported_width = Queue()
 
     def register(self, observer):
-        logger.debug("RegulatorThread regsitered {}".format(observer))
         self.observers.append(observer)
+        logger.debug("RegulatorThread regsitered: {}".format(observer))
 
     def feed_value(self, value):
         pass
 
     def notify(self, freq):
         for observer in self.observers:
-            logger.debug("Setting {} new freq to: {}".format(observer, freq))
+            logger.debug("Setting: {} new freq to: {}".format(observer, freq))
             observer.set_frequency(freq)
 
     def run(self):
         while True:
-            self.notify(2.0 * np.random.randn() + 10.0  )
+            self.notify(2.0 * np.random.randn() + 10.0)
             sleep(0.5)
