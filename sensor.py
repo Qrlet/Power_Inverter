@@ -1,6 +1,4 @@
-"""
-This module will provide API regardless sensor hardware.
-"""
+"""This module provides sensor objects"""
 import numpy as np
 from time import sleep
 from threading import Thread
@@ -12,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class SensorNotifier(Thread):
     """
-    Object responsible for notifying about new sensor measurements.
+    Object responsible for notifying about new sensor measurements. Accepts sensor object when being created.
     """
     def __init__(self, sensor_object):
         Thread.__init__(self)

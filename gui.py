@@ -1,3 +1,4 @@
+"""Module containing gui for interacting with Hitachi slave"""
 from PyQt5 import QtCore, QtWidgets
 import matplotlib
 import sys

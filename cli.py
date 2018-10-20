@@ -1,15 +1,15 @@
 """ This module serves as command line interface for power inverter project"""
-import click
-from modbus import ModbusFactory
+from modbus import MockedRtuSlave
 from sensor import MockedWidthSensor, SensorNotifier
 import gui
 import sys
 
 
-@click.command()
-@click.option("--mock", default=False, help="If true will use mocked objects", type=bool)
-@click.option("--mode", default="auto", help="Mode of operation: auto or manual")
-def main(mock, mode):
+def main():
+    """
+    Run environment with all objects.
+    ToDo: cleaning up all threads
+    """
     app = gui.QtWidgets.QApplication(sys.argv)
     window = gui.QtWidgets.QMainWindow()
     ui = gui.Ui_MainWindow()
@@ -17,14 +17,9 @@ def main(mock, mode):
     ui.setup_signals()
     window.show()
 
-    factory = ModbusFactory()
-    if not mock:
-        factory.create_modbus("mocked")
-    else:
-        factory.create_modbus("rtu")
-
-    mocked_sensor = MockedWidthSensor()
-    sensor_thread = SensorNotifier(mocked_sensor)
+    modbus_mock = MockedRtuSlave()
+    sensor_mock = MockedWidthSensor()
+    sensor_thread = SensorNotifier(sensor_mock)
     sensor_thread.register(ui.sensor_widget)
 
     sensor_thread.start()
