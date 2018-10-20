@@ -1,11 +1,9 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 import matplotlib
 import sys
 matplotlib.use("Qt5Agg")
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import random
 from multiprocessing import Queue
 import logging
 
@@ -25,7 +23,10 @@ def main():
     window.show()
     sys.exit(app.exec_())
 
+
 class SensorWidget():
+    # ToDo: Add signal to this object and emit value each time new value
+    # is taken from queue
     def __init__(self, parent=None):
         self.figure, self.axes = plt.subplots()
         self.x_axis = []
@@ -38,7 +39,7 @@ class SensorWidget():
 
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_figure)
-        self.timer.start(5)
+        self.timer.start(50)
 
     def compute_initial_figure(self):
         self.axes.plot(self.y_values)
@@ -58,7 +59,8 @@ class SensorWidget():
             self.axes.set_xlim(0, N_POINTS_ON_PLOT)
             while len(self.x_axis) < len(self.y_values):
                 self.x_axis.append(len(self.y_values))
-        self.axes.plot(self.x_axis, self.y_values)
+        self.axes.plot(self.x_axis, self.y_values, ".")
+        self.axes.plot(self.x_axis, self.y_values, "-")
         logging.debug("Drawing new plot")
         self.canvas.draw()
 
@@ -130,7 +132,6 @@ class Ui_MainWindow(object):
     def setup_signals(self):
         self.horizontalSlider.valueChanged.connect(self.lcdNumber_freq.display)
         self.pushButton.clicked.connect(lambda: self.lcdNumber_freq.display(float(self.lineEdit.text())))
-
 
 
 if __name__ == "__main__":

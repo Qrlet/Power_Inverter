@@ -1,7 +1,7 @@
-# This module serves as command line interface for power inverter project
+""" This module serves as command line interface for power inverter project"""
 import click
-import RTU
-import sensor_api
+from modbus import ModbusFactory
+from sensor import MockedWidthSensor, SensorNotifier
 import gui
 import sys
 
@@ -17,18 +17,19 @@ def main(mock, mode):
     ui.setup_signals()
     window.show()
 
-    factory = RTU.ModbusFactory()
+    factory = ModbusFactory()
     if not mock:
-        modbus = factory.create_modbus("mocked")
+        factory.create_modbus("mocked")
     else:
-        modbus = factory.create_modbus("rtu")
+        factory.create_modbus("rtu")
 
-    sensor = sensor_api.MockedWidthSensor()
-    sensor_thread = sensor_api.SensorThread(sensor)
+    mocked_sensor = MockedWidthSensor()
+    sensor_thread = SensorNotifier(mocked_sensor)
     sensor_thread.register(ui.sensor_widget)
 
     sensor_thread.start()
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     from logging.config import fileConfig

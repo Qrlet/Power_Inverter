@@ -1,9 +1,9 @@
 import minimalmodbus
-import time
 import numpy as np
 import serial
 import serial.tools.list_ports
 import logging
+from random import randint
 
 logger = logging.getLogger(__name__)
 
@@ -49,14 +49,11 @@ class MockedRtuSlave():
     def __init__(self):
         logger.debug("Mocked rtu created")
 
-
     def _set_up_port(self):
         logger.debug("Port ready")
 
-
     def set_frequency(self, freq):
         logger.debug("Frequency set to: {}".format(freq))
-
 
     def get_frequency(self):
         freq = 10.0 * np.random.randn() + 50.0
@@ -74,7 +71,6 @@ class HitachiSlave(minimalmodbus.Instrument):
         minimalmodbus.Instrument.__init__(self, port=com_port, slaveaddress=device_address, mode='rtu')
         self.handle_local_echo = False
         logger.debug("Hitachi object initialized at port " + str(self.port) + ".")
-
 
     def __del__(self):
         self.serial.close()
@@ -109,28 +105,23 @@ class HitachiSlave(minimalmodbus.Instrument):
                 logger.debug("Test of connection failed. " + "Request: " + code + test_data + " response: " + str(test_response))
                 return 0
 
-
     def get_status(self):
         logger.debug("Checking device status.")
         return self.read_bit(READ_WRITE_COILS["on_off"], functioncode=FUNCTION_CODES["read coil"])
 
-
     def turn_on_device(self):
         logger.debug("Turning ON device.")
         self.write_bit(READ_WRITE_COILS["on_off"], value=1, functioncode=FUNCTION_CODES["write coil"])
-
 
     def turn_off_device(self):
         logger.debug("Turning OFF device.")
         self.set_frequency(HITACHI_FRQUENCY_MIN)
         self.write_bit(READ_WRITE_COILS["on_off"], value=0, functioncode=FUNCTION_CODES["write coil"])
 
-
     def set_frequency(self, frequency):
         assert HITACHI_FRQUENCY_MIN <= frequency <= HITACHI_FRQUENCY_MAX, "Wrong frequency value."
         logger.debug("Set frequency to " + str(frequency))
         self.write_register(READ_WRITE_REGISTERS["inverter_frequency"], frequency, functioncode=FUNCTION_CODES["write register"])
-
 
     def get_frequency(self):
         logger.debug("Getting frequency from register: " + str(READ_WRITE_REGISTERS["inverter_frequency"]))
