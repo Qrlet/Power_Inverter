@@ -136,9 +136,10 @@ class MockedRtuSlave:
         logger.debug("Device disconnected")
 
     @staticmethod
-    def set_frequency():
+    def set_frequency(freq):
         """
         Set mock frequency
+        :param freq: float, freq to be printed
         """
         logger.debug("Frequency set to: {}".format(freq))
 
@@ -167,11 +168,10 @@ def run_hitachi_slave(port, addr):
             freq = float(input("\nProvide frequency: "))
             slave.set_frequency(freq)
     except KeyboardInterrupt:
-        print("Keyboard interrupt!")
+        print("Script interrupted!")
     finally:
         slave.turn_onoff_device(False)
         slave.disconnect()
-        pass
 
 
 if __name__ == "__main__":
